@@ -7,14 +7,15 @@ const PORT = 3000;
 const app = express();
 const httpServer = createServer(app);
 
-const io = new Server(httpServer, {});
-
-app.get("/", (req, res) => {
-  res.sendFile(__dirname + "/index.html");
+const io = new Server(httpServer, {
+  cors: {
+    origin: "*"
+  }
 });
 
 io.on("connection", (socket) => {
-  console.log("log: user connected here");
+
+  console.log(`log: user connected here -  ${socket?.id}`);
 
   socket.on("chat message", (msg) => {
     console.log("log: message added: " + msg);
