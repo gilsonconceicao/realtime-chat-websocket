@@ -7,19 +7,37 @@ const PORT = 3000;
 const app = express();
 const httpServer = createServer(app);
 
+//#region Event names
+const userRegistered = "user:register";
+const chatMessage = "chat:message";
+//#endregion
+
 const io = new Server(httpServer, {
   cors: {
-    origin: "*"
-  }
+    origin: "*",
+  },
 });
 
 io.on("connection", (socket) => {
+  console.log(`log connected-${socket?.id}`);
 
-  console.log(`log: user connected here -  ${socket?.id}`);
 
-  socket.on("chat message", (msg) => {
-    console.log("log: message added: " + msg);
-    io.emit("chat message", msg);
+  socket.on(userRegistered, (username) => {
+    socket.data = {
+      username
+    };
+
+    io.emit(userRegistered, username);
+  });
+
+  socket.on(chatMessage, (msg) => {
+    io.emit(chatMessage, 
+    {
+      userId: socket.id, 
+      message: msg,
+      username: socket?.data?.username
+    });
+
   });
 
   socket.on("disconnect", () => {

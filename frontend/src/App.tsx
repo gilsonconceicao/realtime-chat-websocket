@@ -3,50 +3,72 @@ import { io } from "socket.io-client";
 
 const socket = io("http://localhost:3000");
 
-function App() {
-  const [messages, setMessages] = useState<string[]>([]);
-  const [input, setInput] = useState("");
-console.log('socket', socket)
-  useEffect(() => {
-    if (socket.connected === true) {
-      socket.on("chat message", (msg) => {
-        setMessages((prev) => [...prev, msg]);
-      });
+type UserType = {
+  userId: string;
+  message: string;
+  username: string;
+};
 
-      return () => {
-        socket.off("chat message");
-      };
-    } 
+const userRegistered = "user:register";
+const chatMessage = "chat:message";
+
+function App() {
+  const [messages, setMessages] = useState<UserType[]>([]);
+  const [input, setInput] = useState("");
+  const [username, setUsername] = useState("");
+
+  useEffect(() => {
+    socket.on(chatMessage, (data) => {
+      setMessages((prev) => [...prev, data]);
+    });
+
+    socket.on(userRegistered, (user) => {
+      alert(`Usuário ${user} registrado com sucesso.`);
+    });
+
+    return () => {
+      socket.off(chatMessage);
+      socket.off(userRegistered);
+    };
   }, []);
 
   const sendMessage = (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    socket.emit("chat message", input);
+    socket.emit(chatMessage, input);
     setInput("");
   };
 
+  const handleRegisterUser = (e: React.SubmitEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    socket.emit(userRegistered, username);
+    setUsername("");
+  };
 
   return (
     <div>
-      <ul>
-        {messages.map((m, i) => (
-          <li key={i}>{m}</li>
-        ))}
-      </ul>
+      <h3>Registrar usuário: </h3>
 
-      <form onSubmit={sendMessage}>
-        <input value={input} onChange={(e) => setInput(e.target.value)} />
-        <button>Send</button>
+      <form onSubmit={handleRegisterUser}>
+        <input value={username} onChange={(e) => setUsername(e.target.value)} />
+        <button>set user</button>
       </form>
 
-      {socket.disconnected && <ServerIsNotConnected />}
+      <h3>Mensagens: </h3>
+      <ul>
+        {messages.map((data, i) => (
+          <li key={i}>
+            {data.username}: {data.message}
+          </li>
+        ))}
+      </ul>
+      <form onSubmit={sendMessage}>
+        <input value={input} onChange={(e) => setInput(e.target.value)} />
+        <button>send</button>
+      </form>
     </div>
   );
 }
-
-const ServerIsNotConnected = () => {
-  return <div>Websocket está fora do ar</div>;
-};
 
 export default App;
